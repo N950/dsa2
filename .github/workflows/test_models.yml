@@ -82,7 +82,13 @@ jobs:
       run:  |
         ls .
         #pip install -r install/requirements_fake.txt
-
+        
+    - name: Install rectorch from dev branch
+      run: |
+        git clone -b dev https://github.com/makgyver/rectorch.git
+        cd rectorch
+        pip3 install -r requirements.txt
+        python setup.py install
     #- name: Install repo
     #  run: pip install -e . -r install/py36.txt  --no-deps
 
@@ -102,7 +108,18 @@ jobs:
     #- name: run_models
     #  run: chmod -R 777 . && ztest/run_models.sh   # 2>&1 | tee   /home/runner/work/mlmodels/mlmodels_store/log_import/log_optim.py
 
+    - name: python torch_ease.py test_sparse
+      continue-on-error: true
+      run: cd source/models && ipython torch_ease.py test_sparse
+      
+    - name: python model_rec_ease.py test
+      continue-on-error: true
+      run:  cd source/models && ipython model_rec_ease.py test
 
+    - name: python torch_rectorch.py test
+      continue-on-error: true
+      run: cd source/models && ipython torch_rectorch.py test
+      
     - name: python keras_widedeep.py  test
       continue-on-error: true
       run:  |
