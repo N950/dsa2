@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 python model_gef.py test
-
-
-
 """
 import os, sys,copy, pathlib, pprint, json, pandas as pd, numpy as np, scipy as sci, sklearn
 
 ####################################################################################################
-try   : verbosity = int(json.load(open(os.path.dirname(os.path.abspath(__file__)) + "/../../config.json", mode='r'))['verbosity'])
-except Exception as e : verbosity = 2
-#raise Exception(f"{e}")
+from utilmy import global_verbosity, os_makedirs, pd_read_file
+verbosity = global_verbosity(__file__,"/../../config.json", 3 )
 
 def log(*s):
     print(*s, flush=True)
@@ -21,10 +17,6 @@ def log2(*s):
 
 def log3(*s):
     if verbosity >= 3 : print(*s, flush=True)
-
-def os_makedirs(dir_or_file):
-    if os.path.isfile(dir_or_file) :os.makedirs(os.path.dirname(os.path.abspath(dir_or_file)), exist_ok=True)
-    else : os.makedirs(os.path.abspath(dir_or_file), exist_ok=True)
 
 ####################################################################################################
 global model, session
@@ -260,44 +252,22 @@ def pd_colcat_get_catcount(df, colcat, classcol, continuous_ids):
 
 
 
-def test_dataset_classi_fake(nrows=500):
-    from sklearn import datasets as sklearn_datasets
-    ndim=11
-    coly   = ['y']
-    colnum = ["colnum_" +str(i) for i in range(0, ndim) ]
-    colcat = ['colcat_1']
-    X, y    = sklearn_datasets.make_classification(
-        n_samples=1000,
-        n_features=ndim,
-        # No n_targets param for make_classification
-        # n_targets=1,
+def test(n_sample = 100):
+    from adatasets import test_dataset_classification_fake
+    df, d = test_dataset_classification_fake(nrows=500)
+    colnum, colcat, coly = d['colnum'], d['colcat'], d['coly']
+    df[coly].iloc[:50] = 1  ## Force 2 class
 
-        # Fake dataset, classification on 2 classes
-        n_classes=2,
-        # In classification, n_informative should be less than n_features
-        n_informative=ndim - 2
-    )
-    df         = pd.DataFrame(X,  columns= colnum)
-    df[coly]   = y.reshape(-1, 1)
+    ### Unique values
+    colcat_unique = {  col: list(df[col].unique())  for col in colcat }
 
-    for ci in colcat :
-      df[colcat] = np.random.randint(2, len(df))
+    X = df[colcat + colnum + [coly]]
+    y = df[ [coly]]
 
-    return df, colnum, colcat, coly
-
-
-
-
-def test():
-    df, colnum, colcat, coly = test_dataset_classi_fake(nrows=500)
-    X = df[colcat + colnum + coly]
-    y = df[coly]
-
-    # Split the df into train/test subsets
     X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.05, random_state=2021, )#stratify=y) Regression no classes to stratify to
     X_train, X_valid, y_train, y_valid         = train_test_split(X_train_full, y_train_full, random_state=2021,)# stratify=y_train_full)
     log("X_train", X_train)
-    n_sample = 100
+
 
     def post_process_fun(y):   ### After prediction is done
         return  y.astype(np.int)
@@ -305,39 +275,9 @@ def test():
     def pre_process_fun(y):    ### Before the prediction is done
         return  int(y)
 
-    # m = {
-    # "model_pars": {
-    #     "model_pars" : {'cat': 10, 'n_estimators': 5 }
-    #    ,"post_process_fun" : post_process_fun   ### After prediction  ########################
-    #    ,"pre_process_pars" : {
-    #         "y_norm_fun" :  pre_process_fun ,  ### Before training  ##########################
-    #     }
-    #     },
-
-    #   "compute_pars": { "metric_list": ["accuracy_score","average_precision_score"],
-    #                     # Eval returns a probability
-    #                     "probability" : True
-    #                   },
-
-    #   "data_pars": {
-    #       "n_sample" : n_sample,
-    #       "download_pars" : None,
-    #       ### Raw data:  column input #####################
-    #       "cols_input_type" : {
-    #           "colnum" : colnum,
-    #           "colcat" : colcat,
-    #           "coly" : coly
-    #       },
-
-    #     ###################################################
-    #     'train':   {'Xtrain': X_train, 'ytrain': y_train,
-    #                 'Xtest':  X_valid, 'ytest': y_valid},
-    #     'val':    {'X': X_valid, 'y': y_valid},
-    #     'predict': {'X': X_valid},
-    #      }
-    #   }
     ### Unique values
     colcat_unique = {  col: list(df[col].unique())  for col in colcat }
+
     m = {
     'model_pars': {
         'model_class' :  "model_gefs.py::RandomForest"
@@ -358,7 +298,6 @@ def test():
 
     'compute_pars': {
         'compute_extra' :{
-
         },
 
         'compute_pars' :{
@@ -381,6 +320,7 @@ def test():
         },
         ### family of columns for MODEL  ##################
          'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
+
 
         ### Filter data rows   ###########################
         ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
@@ -434,7 +374,7 @@ def test_helper(model_pars, data_pars, compute_pars):
     log(f'Top 5 y_pred: {np.squeeze(ypred)[:5]}')
 
     log('Evaluating the model..')
-    log(eval(data_pars=data_pars, compute_pars=compute_pars))
+    # log(eval(data_pars=data_pars, compute_pars=compute_pars))
 
 
     # Open Issue with GeFs, not pickle-able and with no native saving mechanism
@@ -552,11 +492,39 @@ if __name__ == "__main__":
     fire.Fire()
     # test()
 
+
+"""
+def test_dataset_classi_fake(nrows=500):
+    from sklearn import datasets as sklearn_datasets
+    ndim=11
+    coly   = ['y']
+    colnum = ["colnum_" +str(i) for i in range(0, ndim) ]
+    colcat = ['colcat_1']
+    X, y    = sklearn_datasets.make_classification(
+        n_samples=1000,
+        n_features=ndim,
+        # No n_targets param for make_classification
+        # n_targets=1,
+        # Fake dataset, classification on 2 classes
+        n_classes=2,
+        # In classification, n_informative should be less than n_features
+        n_informative=ndim - 2
+    )
+    df         = pd.DataFrame(X,  columns= colnum)
+    df[coly]   = y.reshape(-1, 1)
+    for ci in colcat :
+      df[colcat] = np.random.randint(2, len(df))
+    return df, colnum, colcat, coly
+"""
+
+
+
+
+
+
 """
 python model_gef.py test_model
-
     def learncats(data, classcol=None, continuous_ids=[]):
-
             Learns the number of categories in each variable and standardizes the data.
             Parameters
             ----------
@@ -572,7 +540,6 @@ python model_gef.py test_model
             ncat: numpy m
                 The number of categories of each variable. One if the variable is
                 continuous.
-
         data = data.copy()
         ncat = np.ones(data.shape[1])
         if not classcol:
@@ -584,6 +551,4 @@ python model_gef.py test_model
                 data[:, i] = data[:, i].astype(int)
                 ncat[i] = max(data[:, i]) + 1
         return ncat
-
-
 """

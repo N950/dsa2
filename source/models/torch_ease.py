@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 python torch_ease.py test
-
-
-
 """
 import os, sys,copy, pathlib, pprint, json, pandas as pd, numpy as np, scipy as sci, sklearn
 from sklearn.utils.validation import _num_samples
@@ -64,10 +61,10 @@ path_pkg =  thisfile_dirpath + "/repo/TorchEASE/"
 ####################################################################################################
 class Model(object):
     def __init__(self, model_pars=None, data_pars=None, compute_pars=None):
-        
+
         if model_pars is None:
             self.model = None
-            return 
+            return
 
         # n_samples = data_pars["n_sample"]
         # train_df = data_pars["df"].iloc[:n_samples]
@@ -81,7 +78,7 @@ class Model(object):
 
 
 
-        
+
 
 def fit(data_pars=None, compute_pars=None, out_pars=None, **kw):
     """
@@ -140,7 +137,7 @@ def test_dataset_goodbooks(nrows=1000):
     data_path = "./goodbooks_dataset"
     if not os.path.isdir(data_path):
         os.makedirs(data_path, exist_ok=True)
-    
+
         wget.download(
             "https://github.com/zygmuntz/goodbooks-10k/releases/download/v1.0/goodbooks-10k.zip",
             out=data_path
@@ -186,7 +183,7 @@ def get_dataset(data_pars=None, task_type="train", **kwargs):
             ),
             columns=["user_id", "book_id", "rating"]
         ).iloc[:n_samples]
-        
+
         # return data_pars["df"].iloc[:n_samples]
 
     elif task_type == "predict":
@@ -244,11 +241,11 @@ def test(n_sample          = 1000):
 
 
         ####### ACTUAL data Values #############################################################
-        ,'data_flow' : {    
+        ,'data_flow' : {
             'train':   {'Xtrain': X_train,  'ytrain': y_train}#, 'Xtest':  X_valid,  'ytest':  y_valid}  #{'X_train': train_df,'Y_train':train_label, 'X_test':  val_df,'Y_test':val_label }
             ,'val':     {'X': X_valid,  'y': y_valid}  #{  'X':  val_df ,'Y':val_label }
             ,'predict': {'X': X_valid}
-        
+
         },
 
         }
@@ -276,7 +273,7 @@ def test(n_sample          = 1000):
     #                   'compute_pars' : {'epochs': 1 },
     #                 },
 
-    # 'data_pars': { 
+    # 'data_pars': {
     #     'n_sample' : n_sample,
     #     'download_pars' : None,
     #     'cols_input_type' : {
@@ -335,6 +332,21 @@ def test_helper(model_pars, data_pars, compute_pars):
     # log('Model Snapshot')
     # model_summary()
 
+
+
+
+
+if __name__ == "__main__":
+    import fire
+    fire.Fire()
+
+
+
+
+
+
+
+
 # def get_dataset(data_pars, task_type="train"):
 #     """
 #     :param data_pars:
@@ -351,7 +363,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #                                             get_data_idxs=False)
 
 #             return X_train
-        
+
 #     elif task_type == 'pred_decode':
 #         train_loader, X_train, target_errors_train, dataset_obj,  attributes = utils.load_data(data_path, batch_size,
 #                                         is_train=True,
@@ -367,7 +379,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #                                             get_data_idxs=False)
 
 #             return train_loader, X_train, target_errors_train, dataset_obj, attributes
-        
+
 #         elif task_type == 'test':
 
 #             test_loader, X_test, target_errors_test, _, _ = utils.load_data(
@@ -381,7 +393,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #                                             get_data_idxs=False)
 
 #             return train_loader
-        
+
 #     # -- clean versions for evaluation
 #     else:
 
@@ -403,7 +415,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 # def make_rand_sparse_dataset(
 #         n_rows=1000,
 #     ):
-#     # we need a single source of all user_ids and item_ids 
+#     # we need a single source of all user_ids and item_ids
 #     # to avoid ids apearing in test that wasn't available in train
 #     all_train_data = np.random.randint(0, 10000000, (n_rows, 2)).astype(np.int32)
 
@@ -415,7 +427,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #     val = np.ones((train_data.shape[0],1)).astype(np.int32)
 #     train_data = np.hstack((train_data, val))
 #     train_set_df = pd.DataFrame(
-#         data=train_data 
+#         data=train_data
 #     )
 
 #     # add val to val_data and create df
@@ -431,7 +443,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #     test_set_df = pd.DataFrame(
 #         data=test_data
 #     )
-    
+
 #     ds = Dataset(
 #         uids=np.unique(all_train_data[:,0]).astype(np.int32),
 #         iids=np.unique(all_train_data[:,1]).astype(np.int32),
@@ -447,9 +459,9 @@ def test_helper(model_pars, data_pars, compute_pars):
 #         shuffle=True
 #     )
 
-#     return train_sampler 
+#     return train_sampler
 
-    
+
 # def test_sparse(n_sample=1000):
 
 #     train_sampler = make_rand_sparse_dataset(
@@ -457,7 +469,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #     )
 
 #     model = EASE()
-    
+
 #     log("Training...")
 
 #     model.train(train_sampler)
@@ -469,7 +481,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 #     test_mapped_ids = id_mapper(test_uids)
 
 #     log("Predicting...")
-    
+
 #     res = model.predict(test_mapped_ids, test_te, False)
 #     log(res)
 
@@ -548,7 +560,7 @@ def test_helper(model_pars, data_pars, compute_pars):
 # def eval(Xpred=None, data_pars: dict={}, compute_pars: dict={}, out_pars: dict={}, **kw):
 #     global model, session
 #     """
-#          Encode + Decode 
+#          Encode + Decode
 #     """
 #     Xencoded = encode(Xpred=Xpred, data_pars=data_pars, compute_pars=compute_pars, out_pars=out_pars)
 #     log("\nEncoded : ", Xencoded)
@@ -556,9 +568,3 @@ def test_helper(model_pars, data_pars, compute_pars):
 #     log('\nDecoding : ')
 #     Xnew_original = decode(Xpred=Xencoded, data_pars=data_pars, compute_pars=compute_pars, out_pars=out_pars)
 #     log('\nDecoded : ', Xnew_original)
-
-if __name__ == "__main__":
-    import fire
-    fire.Fire()
-
-
