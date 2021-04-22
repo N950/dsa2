@@ -57,14 +57,14 @@ class Model(object):
 
             elif  'LGBMRegressor' in model_pars['model_class'] :
                self.model_pars['model_pars']['objective'] =  'huber'
-            
+
             # Suppress warnings
             self.model_pars['model_pars']['verbose'] = -1
-            # To avoid warings that occure due to large num_leaves 
+            # To avoid warings that occure due to large num_leaves
             self.model_pars['model_pars']['num_leaves'] = 5
 
-             
-            
+
+
             model_class     = globals()[model_object_name]
             self.model_meta = model_class  ### Hyper param seerch Model
             self.model      = None         ### Best model saved after train
@@ -93,19 +93,19 @@ def fit(data_pars=None, compute_pars=None, out_pars=None, **kw):
     print("pars_optuna", pars_optuna)
 
     if optuna_engine == 'LightGBMTuner':
-        model_fit = model.model_meta.LightGBMTuner(pars_lightgbm, dtrain, 
+        model_fit = model.model_meta.LightGBMTuner(pars_lightgbm, dtrain,
                     valid_sets=[dtrain, dval], **pars_optuna).run()
 
     elif optuna_engine == 'LightGBMTunerCV':
-        model_fit = model.model_meta.LightGBMTunerCV(pars_lightgbm, dtrain, 
+        model_fit = model.model_meta.LightGBMTunerCV(pars_lightgbm, dtrain,
                     valid_sets=[dtrain, dval], **pars_optuna).run()
 
     else :
-        model_fit = model.model_meta.train( pars_lightgbm, dtrain, 
+        model_fit = model.model_meta.train( pars_lightgbm, dtrain,
                     valid_sets=[dtrain, dval], **pars_optuna)
     """
        print("Best score:", tuner.best_score)
-       best_params = tuner.best_params         
+       best_params = tuner.best_params
     """
 
     ### Best model store as
@@ -124,9 +124,9 @@ def predict(Xpred=None, data_pars={}, compute_pars={}, out_pars={}, **kw):
 
     ypred = model.model.predict(Xpred,) # num_iteration=model.model.best_iteration)
 
-    ypred_proba = None  ### No proba    
+    ypred_proba = None  ### No proba
     if compute_pars.get("probability", False):
-         ypred_proba = model.model.predict_proba(Xpred) 
+         ypred_proba = model.model.predict_proba(Xpred)
     return ypred, ypred_proba
 
 
@@ -178,15 +178,15 @@ def get_dataset(data_pars=None, task_type="train", **kw):
     data_type = data_pars.get('type', 'ram')
     if data_type == "ram":
         if task_type == "predict":
-            d = data_pars[task_type]
+            d = data_pars['data_flow'][task_type]
             return d["X"]
 
         if task_type == "eval":
-            d = data_pars[task_type]
+            d = data_pars['data_flow'][task_type]
             return d["X"], d["y"]
 
         if task_type == "train":
-            d = data_pars[task_type]
+            d = data_pars['data_flow'][task_type]
             return d["Xtrain"], d["ytrain"], d["Xtest"], d["ytest"]
 
     elif data_type == "file":
@@ -227,12 +227,62 @@ def test(config=''):
     def pre_process_fun(y):
         return int(y)
 
+    # m = {
+    # 'model_pars': {
+
+    #     'objective' : 'binary',
+    #      'model_class' :  "optuna_lightgbm.py::LGBMClassifier"
+    #      ,'model_pars' : {}
+    #     , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
+    #     , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
+    #         ### Pipeline for data processing ##############################
+    #         'pipe_list': [  #### coly target prorcessing
+    #         {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
+    #         {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
+    #         {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
+
+    #         ],
+    #         }
+    #     },
+
+    # 'compute_pars': { 'metric_list': ['accuracy_score','average_precision_score'],
+    #                   'compute_pars': { 'epochs' : 1}
+    #                 },
+
+    # 'data_pars': { 'n_sample' : n_sample,
+
+    #     'data_pars' :{
+    #     },
+
+    #     'download_pars' : None,
+    #     'cols_input_type' : cols_input_type_1,
+    #     ### family of columns for MODEL  #########################################################
+    #      'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
+    #     ,'cols_model_group_custom' :  { 'colnum' : colnum,
+    #                                     'colcat' : colcat,
+    #                                     'coly' : coly  }
+    #     ####### ACTUAL data pipeline #############################################################
+    #     ,'train':   {} #{'X_train': train_df,'Y_train':train_label, 'X_test':  val_df,'Y_test':val_label }
+    #     ,'val':     {}  #{  'X':  val_df ,'Y':val_label }
+    #     ,'predict': {}
+
+
+    #     ### Filter data rows   ##################################################################
+    #     ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
+
+    #     ### Added continuous & sparse features groups ###
+    #     'cols_model_type2': {
+    #         'colcontinuous':   colnum ,
+    #         'colsparse' :     colcat,
+    #     },
+    #     }
+    # }
+
     m = {
     'model_pars': {
-        
-        'objective' : 'binary',
+         'objective' : 'binary',
          'model_class' :  "optuna_lightgbm.py::LGBMClassifier"
-         ,'model_pars' : {}
+         ,'model_pars' : {  }
         , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
         , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
             ### Pipeline for data processing ##############################
@@ -243,42 +293,42 @@ def test(config=''):
 
             ],
             }
-        },
+    },
 
     'compute_pars': { 'metric_list': ['accuracy_score','average_precision_score'],
                       'compute_pars': { 'epochs' : 1}
-                    },
+    },
 
     'data_pars': { 'n_sample' : n_sample,
-
         'data_pars' :{
         },
 
-        'download_pars' : None,
-        'cols_input_type' : cols_input_type_1,
-        ### family of columns for MODEL  #########################################################
+        'download_pars'   : None,
+        # 'cols_input_type' : cols_input_type_1,
+        ### family of columns for MODEL  ##################
          'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
-        ,'cols_model_group_custom' :  { 'colnum' : colnum,
-                                        'colcat' : colcat,
-                                        'coly' : coly  }
-        ####### ACTUAL data pipeline #############################################################
-        ,'train':   {} #{'X_train': train_df,'Y_train':train_label, 'X_test':  val_df,'Y_test':val_label }
-        ,'val':     {}  #{  'X':  val_df ,'Y':val_label }
-        ,'predict': {}
 
-
-        ### Filter data rows   ##################################################################
+        ### Filter data rows   ###########################
         ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
 
         ### Added continuous & sparse features groups ###
-        'cols_model_type2': {
-            'colcontinuous':   colnum ,
-            'colsparse' :     colcat,
+        'cols_input_type' : {
+            'colcat' : colcat,
+            'colnum' : colnum,
+            'coly'  :  coly,
+        }
+
+
+        ####### ACTUAL data Values #############################################################
+        ,'data_flow' : {
+            'train':   {}
+            ,'val':     {}
+            ,'predict': {}
+
         },
+
         }
     }
-
-
     log("##### Sparse Tests  ############################################### ")
     ##### Dict update
     m['model_pars']['model_pars'] = {  }
@@ -286,14 +336,14 @@ def test(config=''):
     train_df, test_df = train_test_split(df, test_size=0.2)
     # test_df, val_df = train_test_split(val_df, test_size=0.5)
 
-    m['data_pars']['train']     = {
-        'Xtrain': train_df[colcat+colnum], 
+    m['data_pars']['data_flow']['train']     = {
+        'Xtrain': train_df[colcat+colnum],
         'ytrain': train_df[coly],
         'Xtest':  test_df[colnum+colcat],
         'ytest': test_df[coly]
     }
-    m['data_pars']['predict']   = {'X':       test_df }
-    m['data_pars']['data_pars'] = {
+    m['data_pars']['data_flow']['predict']   = {'X':       test_df }
+    m['data_pars']['data_flow']['data_pars'] = {
         # 'colcat_unique' : colcat_unique,
         'colcat'        : colcat,
         'colnum'        : colnum,
@@ -343,7 +393,7 @@ def benchmark():
         benchmark_helper(train_df, test_df)
         log(f"\t\t######################## !! END !! ########################\n")
 
-        
+
 
 def benchmark_helper(train_df, test_df):
     global model, session
@@ -363,7 +413,7 @@ def benchmark_helper(train_df, test_df):
 
     m = {
     'model_pars': {
-        
+
         'objective' : 'binary',
          'model_class' :  "optuna_lightgbm.py::LGBMClassifier"
          ,'model_pars' : {}
@@ -416,11 +466,11 @@ def benchmark_helper(train_df, test_df):
     log("##### Sparse Tests  ############################################### ")
     ##### Dict update
     m['model_pars']['model_pars'] = {  }
- 
+
     # test_df, val_df = train_test_split(val_df, test_size=0.5)
 
     m['data_pars']['train']     = {
-        'Xtrain': train_df[colcat+colnum], 
+        'Xtrain': train_df[colcat+colnum],
         'ytrain': train_df[coly],
         'Xtest':  test_df[colnum+colcat],
         'ytest': test_df[coly]

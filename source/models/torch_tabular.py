@@ -10,9 +10,9 @@ https://github.com/manujosephv/pytorch_tabular/tree/main/pytorch_tabular/models
 
 
 
-Bug  
+Bug
     cmd ="python -m pip install git+https://github.com/manujosephv/pytorch_tabular.git@82a30fe2ad1cc8c4f883d86d5f63925e67a0a015 --no-deps"
- 
+
 The core model which orchestrates everything from initializing the datamodule, the model, trainer, etc.
 Args:
     config (Optional[Union[DictConfig, str]], optional): Single OmegaConf DictConfig object or
@@ -86,7 +86,7 @@ from pytorch_tabular.models import (CategoryEmbeddingModelConfig, TabNetModelCon
 from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig, ExperimentConfig
 
 
-MODEL_DICT = { 
+MODEL_DICT = {
     "CategoryEmbeddingModelConfig":  CategoryEmbeddingModelConfig ,
     "TabNetModelConfig" :            TabNetModelConfig ,
     "NodeConfig" :                   NodeConfig,
@@ -128,8 +128,8 @@ class Model(object):
                 for x in  [ 'num_gaussian', 'mdn_config' ] :
                     try :
                        del self.model_pars['model_pars'][x]
-                    except : pass   
-            
+                    except : pass
+
 
             model_config = model_class( **model_pars['model_pars']   )
             # Remove it since it's unused for other models and can cause errors
@@ -182,7 +182,7 @@ def predict(Xpred=None, data_pars: dict={}, compute_pars: dict={}, out_pars: dic
 
     Xpred_tuple_concat = pd.concat((Xpred_tuple[0], Xpred_tuple[1]), axis=1)
     ypred = model.model.predict(Xpred_tuple_concat)
-    
+
     #####################################################################
     ypred_proba = None  ### No proba
     if compute_pars.get("probability", False):
@@ -210,7 +210,7 @@ def load_model(path=""):
     global model, session
     import cloudpickle as pickle
     model0 = pickle.load(open(path + '/model/model.pkl', mode='rb'))
-         
+
     model = Model()  # Empty model
     model.model_pars   = model0.model_pars
     model.compute_pars = model0.compute_pars
@@ -219,7 +219,7 @@ def load_model(path=""):
     ### Custom part
     # model.model        = TabularModel.load_from_checkpoint( "ztmp/data/output/torch_tabular/torch_checkpoint")
     model.model        = TabularModel.load_from_checkpoint(  path +"/model/torch_checkpoint")
- 
+
     session = None
     return model, session
 
@@ -313,7 +313,7 @@ def test_dataset_covtype(nrows=1000):
 
     # Sparse features
     colcat = ["Wilderness_Area1",  "Wilderness_Area2", "Wilderness_Area3", "Wilderness_Area4",  "Soil_Type1",  "Soil_Type2",  "Soil_Type3", "Soil_Type4",  "Soil_Type5",  "Soil_Type6",  "Soil_Type7",  "Soil_Type8",  "Soil_Type9", "Soil_Type10",  "Soil_Type11",  "Soil_Type12",  "Soil_Type13",  "Soil_Type14", "Soil_Type15",  "Soil_Type16",  "Soil_Type17",  "Soil_Type18",  "Soil_Type19", "Soil_Type20",  "Soil_Type21",  "Soil_Type22",  "Soil_Type23",  "Soil_Type24", "Soil_Type25",  "Soil_Type26",  "Soil_Type27",  "Soil_Type28",  "Soil_Type29", "Soil_Type30",  "Soil_Type31",  "Soil_Type32",  "Soil_Type33",  "Soil_Type34", "Soil_Type35",  "Soil_Type36",  "Soil_Type37",  "Soil_Type38",  "Soil_Type39", "Soil_Type40",  ]
-    
+
     # Target column
     coly        = ["Covertype"]
 
@@ -322,12 +322,12 @@ def test_dataset_covtype(nrows=1000):
     datafile = BASE_DIR.joinpath('covtype.data.gz')
     datafile.parent.mkdir(parents=True, exist_ok=True)
     url = "https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz"
-    
+
     # Download the dataset in case it's missing
     if not datafile.exists():
         wget.download(url, datafile.as_posix())
 
-    # Read nrows of only the given columns 
+    # Read nrows of only the given columns
     feature_columns = colnum + colcat + coly
     df = pd.read_csv(datafile, header=None, names=feature_columns, nrows=nrows)
     df[coly] = df[coly].astype('uint8')
@@ -357,31 +357,119 @@ def test(n_sample = 100):
     def post_process_fun(y): return int(y)
     def pre_process_fun(y):  return int(y)
 
+    # m = {
+    # 'model_pars': {
+    #     # Specify the ModelConfig for pytorch_tabular
+    #     'model_class':  "torch_tabular.py::CategoryEmbeddingModelConfig"
+
+    #     ,'model_pars' : {
+    #                     # 'task': "classification",
+    #                     # 'metrics' : ["f1","accuracy"],
+    #                     # 'metrics_params' : [{"num_classes":num_classes},{}]
+    #                     }
+
+    #     , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
+    #     , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
+    #         ### Pipeline for data processing ##############################
+    #         'pipe_list': [  #### coly target prorcessing
+    #         {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
+    #         {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
+    #         #### catcol INTO integer,   colcat into OneHot
+    #         {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
+    #         {'uri': 'source/prepro.py::pd_colcat_to_onehot',     'pars': {}, 'cols_family': 'colcat_bin', 'cols_out': 'colcat_onehot',  'type': ''             },
+    #     ],
+    #         }
+    # },
+
+    # 'compute_pars': { 'metric_list': ['accuracy_score','average_precision_score'],
+    #             # batch_size (int): Number of samples in each batch of training
+    #             # fast_dev_run (bool): Quick Debug Run of Val
+    #             # max_epochs (int): Maximum number of epochs to be run
+    #             # min_epochs (int): Minimum number of epochs to be run
+    #             # gpus (int): The index of the GPU to be used. If `None`, will use CPU
+    #             # accumulate_grad_batches (int): Accumulates grads every k batches or as set up in the dict.
+    #             #     Trainer also calls optimizer.step() for the last indivisible step number.
+    #             # auto_lr_find (bool): Runs a learning rate finder algorithm (see this paper) when calling trainer.tune(),
+    #             #     to find optimal initial learning rate.
+    #             # check_val_every_n_epoch (int): Check val every n train epochs.
+    #             # gradient_clip_val (float): Gradient clipping value
+    #             # overfit_batches (float): Uses this much data of the training set. If nonzero, will use the same training set
+    #             #     for validation and testing. If the training dataloaders have shuffle=True, Lightning will automatically disable it.
+    #             #     Useful for quickly debugging or trying to overfit on purpose.
+    #             # profiler (Union[str, NoneType]): To profile individual steps during training and assist in identifying bottlenecks.
+    #             #     Choices are: 'None' 'simple' 'advanced'
+    #             # early_stopping (str): The loss/metric that needed to be monitored for early stopping. If None, there will be no early stopping
+    #             # early_stopping_min_delta (float): The minimum delta in the loss/metric which qualifies as an improvement in early stopping
+    #             # early_stopping_mode (str): The direction in which the loss/metric should be optimized. Choices are `max` and `min`
+    #             # early_stopping_patience (int): The number of epochs to wait until there is no further improvements in loss/metric
+    #             # checkpoints (str): The loss/metric that needed to be monitored for checkpoints. If None, there will be no checkpoints
+    #             # checkpoints_path (str): The path where the saved models will be
+    #             # checkpoints_name(Optional[str]): The name under which the models will be saved.
+    #             #     If left blank, first it will look for `run_name` in experiment_config and if that is also None
+    #             #     then it will use a generic name like task_version.
+    #             # checkpoints_mode (str): The direction in which the loss/metric should be optimized
+    #             # checkpoints_save_top_k (int): The number of best models to save
+    #             # load_best (bool): Flag to load the best model saved during training
+    #             # track_grad_norm (int): Track and Log Gradient Norms in the logger.
+    #             #     -1 by default means no tracking. 1 for the L1 norm, 2 for L2 norm, etc.
+    #             #
+    #             'compute_pars' : {   'max_epochs' : 1, 'min_epochs': 1
+
+    #             }
+    # },
+
+    # 'data_pars': { 'n_sample' : n_sample,
+    #     'download_pars'   : None,
+    #     'cols_input_type' : cols_input_type_1,
+
+    #     ### family of columns for MODEL  #########################################################
+    #     'cols_model_group'  : [ 'colnum_bin',   'colcat_bin' ],
+
+    #     ### Added continuous & sparse features groups  == cols_ref_formodel = ['colcontinuous', 'colsparse']
+    #     'cols_model_type2': {
+    #         'colcontinuous':  colnum ,
+    #         'colsparse'    : colcat,
+    #         'coly'         : coly
+    #     },
+    #     ### Filter data rows   ##################################################################
+    #     'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
+
+
+    #     ###################################################
+    #     'train':   {'Xtrain': X_train, 'ytrain': y_train,  'Xtest': X_valid,  'ytest':  y_valid},
+    #     'eval':    {'X': X_valid,  'y': y_valid},
+    #     'predict': {}
+
+    # }
+    # }
     m = {
     'model_pars': {
-        # Specify the ModelConfig for pytorch_tabular
-        'model_class':  "torch_tabular.py::CategoryEmbeddingModelConfig"
+         'model_class' :  "torch_tabular.py::CategoryEmbeddingModelConfig"
+         ,'model_pars' : {
 
-        ,'model_pars' : {
-                        # 'task': "classification",
-                        # 'metrics' : ["f1","accuracy"],
-                        # 'metrics_params' : [{"num_classes":num_classes},{}]
-                        }
-
+          }
         , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
         , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
             ### Pipeline for data processing ##############################
             'pipe_list': [  #### coly target prorcessing
             {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
             {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
-            #### catcol INTO integer,   colcat into OneHot
             {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
-            {'uri': 'source/prepro.py::pd_colcat_to_onehot',     'pars': {}, 'cols_family': 'colcat_bin', 'cols_out': 'colcat_onehot',  'type': ''             },
-        ],
+
+            ],
             }
     },
 
-    'compute_pars': { 'metric_list': ['accuracy_score','average_precision_score'],
+    'compute_pars': {
+        'compute_extra' :{
+                "log_interval":50,
+                "save_on":True,
+                "verbose_metrics_epoch":True,
+                "verbose_metrics_feature_epoch":False
+            },
+            'compute_pars' : {   'max_epochs' : 1, 'min_epochs': 1},
+
+            'metric_list': ['accuracy_score','average_precision_score'],
                 # batch_size (int): Number of samples in each batch of training
                 # fast_dev_run (bool): Quick Debug Run of Val
                 # max_epochs (int): Maximum number of epochs to be run
@@ -413,45 +501,51 @@ def test(n_sample = 100):
                 # track_grad_norm (int): Track and Log Gradient Norms in the logger.
                 #     -1 by default means no tracking. 1 for the L1 norm, 2 for L2 norm, etc.
                 #
-                'compute_pars' : {   'max_epochs' : 1, 'min_epochs': 1
-
-                }
     },
 
     'data_pars': { 'n_sample' : n_sample,
+
         'download_pars'   : None,
-        'cols_input_type' : cols_input_type_1,
+        # 'cols_input_type' : cols_input_type_1,
+        ### family of columns for MODEL  ##################
+         'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
 
-        ### family of columns for MODEL  #########################################################
-        'cols_model_group'  : [ 'colnum_bin',   'colcat_bin' ],
+        ### Filter data rows   ###########################
+        ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
 
-        ### Added continuous & sparse features groups  == cols_ref_formodel = ['colcontinuous', 'colsparse']
+        ### Added continuous & sparse features groups ###
         'cols_model_type2': {
             'colcontinuous':  colnum ,
             'colsparse'    : colcat,
             'coly'         : coly
         },
-        ### Filter data rows   ##################################################################
-        'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
 
+        'data_pars' :{
+                # Raw dataset, pre preprocessing
+                "batch_size":150,   ### Mini Batch from data
+                # Needed by getdataset
+                "clean" : False,
+        }
+        ####### ACTUAL data Values #############################################################
+        ,'train':   {'Xtrain': X_train, 'ytrain': y_train,  'Xtest': X_valid,  'ytest':  y_valid}
+        ,'val':     {'X': X_valid,  'y': y_valid}
+        ,'predict': {}
 
-        ###################################################
-        'train':   {'Xtrain': X_train, 'ytrain': y_train,  'Xtest': X_valid,  'ytest':  y_valid},
-        'eval':    {'X': X_valid,  'y': y_valid},
-        'predict': {}
+        },
 
+        'global_pars' :{
+
+        }
     }
-    }
-
     ##### Running loop
     """https://github.com/manujosephv/pytorch_tabular/blob/main/tests/test_mdn.py
-    
-    Neural Oblivious Decision Ensembles for Deep Learning on 
-    Tabular Data is a model presented in ICLR 2020 and 
+
+    Neural Oblivious Decision Ensembles for Deep Learning on
+    Tabular Data is a model presented in ICLR 2020 and
     according to the authors have beaten well-tuned Gradient Boosting models on many datasets.
 
-    TabNet: Attentive Interpretable Tabular Learning is another model coming out 
-    of Google Research which uses Sparse Attention in multiple steps 
+    TabNet: Attentive Interpretable Tabular Learning is another model coming out
+    of Google Research which uses Sparse Attention in multiple steps
     of decision making to model the output.
 
     Mixed Density Network
@@ -714,13 +808,13 @@ def test2(nrows=10000):
         trainer_config=trainer_config,
         # experiment_config=experiment_config,
     )
-    
-    
+
+
     tabular_model.fit(  train=train, validation=val)
     result = tabular_model.evaluate(val)
     log(result)
-    
-    
+
+
     test.drop(columns=target_name, inplace=True)
     pred_df = tabular_model.predict(val.iloc[:100,:])
 

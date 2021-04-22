@@ -89,8 +89,8 @@ class Model(object):
         else:
             ###############################################################
             # Load Model Class
-            model_class = model_class_loader(model_pars['model_class'], MODEL_LIST ) 
-            
+            model_class = model_class_loader(model_pars['model_class'], MODEL_LIST )
+
             mpars    = model_pars.get('model_pars', {})  ## default already in model
 
             # change from dict keys (to __init__ params (X_dim, y_dim)
@@ -240,7 +240,7 @@ def load_info(path=""):
 
 def get_dataset(data_pars=None, task_type="train", **kw):
     """
-      "ram"  : 
+      "ram"  :
       "file" :
     """
     data_type = data_pars.get('type', 'ram')
@@ -249,7 +249,7 @@ def get_dataset(data_pars=None, task_type="train", **kw):
             d = data_pars[task_type]
             return d["X"]
 
-        if task_type == "eval":
+        if task_type == "val":
             d = data_pars[task_type]
             return d["X"], d["y"]
 
@@ -272,7 +272,7 @@ def y_norm(y, inverse=True, mode='boxcox'):
         k1 = 0.6145279599674994  # Optimal boxCox lambda for y
         if inverse:
                 y2 = y * width0
-                # Numpy Warns of raising power to a neg nbr to in case they result in complex nbrs  
+                # Numpy Warns of raising power to a neg nbr to in case they result in complex nbrs
                 tmp = ((y2 * k1) + 1)
                 y2 = np.sign(tmp) * np.abs(tmp) ** (1 / k1)
                 return y2
@@ -308,7 +308,7 @@ def test_dataset_regress_fake(nrows=500):
     df[coly]= y.reshape(-1, 1)
     df[coly] = (df[coly] -df[coly].min() ) / (df[coly].max() -df[coly].min() )
 
-    # Assign categ values the cat columns 
+    # Assign categ values the cat columns
     for ci in colcat :
       df[ci] = np.random.randint(    low=0, high=1, size=df[ci].shape )
 
@@ -343,37 +343,102 @@ def test(nrows=1000):
         return y_norm(y, inverse=False, mode='norm')
 
 
-    m = {'model_pars': {
+    # m = {'model_pars': {
 
-        # Input features, output features
-        'model_pars' : {},
+    #     # Input features, output features
+    #     'model_pars' : {},
 
-        'post_process_fun' : post_process_fun   ### After prediction  ##########################################
-     
-        },
+    #     'post_process_fun' : post_process_fun   ### After prediction  ##########################################
 
-        'compute_pars': { 'metric_list': ['accuracy_score', 'median_absolute_error']
-                        },
+    #     },
 
-        'data_pars': { 
-            'n_sample' : n_sample,
-        ###################################################  
-        'train': {  'Xtrain': X_train,
-                    'ytrain': y_train,
-                    'Xtest': X_valid,
-                    'ytest': y_valid
-        },
-        'eval': {   'X': X_valid,
-                    'y': y_valid
-        },
-        'predict': {'X': X_valid}
+    #     'compute_pars': { 'metric_list': ['accuracy_score', 'median_absolute_error']
+    #                     },
 
-        ### Filter data rows   ##################################################################
-        ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
+    #     'data_pars': {
+    #         'n_sample' : n_sample,
+    #     ###################################################
+    #     'train': {  'Xtrain': X_train,
+    #                 'ytrain': y_train,
+    #                 'Xtest': X_valid,
+    #                 'ytest': y_valid
+    #     },
+    #     'eval': {   'X': X_valid,
+    #                 'y': y_valid
+    #     },
+    #     'predict': {'X': X_valid}
+
+    #     ### Filter data rows   ##################################################################
+    #     ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
+
+    #     }
+    # }
+    m = {
+    'model_pars': {
+        'model_class' :  "model_bayesian_pyro.py::BayesianRegression"
+        ,'model_pars' : {
 
         }
-    }
+        , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
+        , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
+            ### Pipeline for data processing ##############################
+            'pipe_list': [  #### coly target prorcessing
+            {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
+            {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
+            {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
 
+            ],
+            }
+    },
+
+    'compute_pars': {
+        'compute_extra' :{
+
+        },
+
+        'compute_pars' :{
+            'metric_list': ['accuracy_score','average_precision_score'],
+        },
+
+    },
+
+    'data_pars': {
+        "n_sample" : n_sample,
+        "download_pars" : None,
+
+        ### family of columns for MODEL  ##################
+         'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
+
+        ### Filter data rows   ###########################
+        ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
+
+        ### Added continuous & sparse features groups ###
+        'cols_model_type2': {
+        },
+
+        'data_pars' :{
+                'cols_model_type': {
+                },
+                "clean" : False,
+
+                'colcat_unique' : None,
+                'colcat'        : colcat,
+                'colnum'        : colnum,
+                'coly'          : coly,
+                'colembed_dict' : None
+        }
+        ####### ACTUAL data Values #############################################################
+
+        ,'train':   {'Xtrain': X_train, 'ytrain': y_train,
+                    'Xtest':  X_valid, 'ytest': y_valid}
+        ,'val':     {'X': X_valid, 'y': y_valid}
+        ,'predict': {'X': X_valid}
+
+    },
+
+    'global_pars' :{
+    }
+    }
     ##### Running loop
     ll = [
         ('model_bayesian_pyro.py::BayesianRegression', {'X_dim': 17,  'y_dim': 1 } )
@@ -400,7 +465,7 @@ def test(nrows=1000):
 
         log('Load model..')
         model, session = load_model(path="ztmp/data/output/torch_tabular")
-        
+
         log('Model architecture:')
         log(model.model)
 

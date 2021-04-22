@@ -373,12 +373,7 @@ def test():
     'data_pars': {
         "n_sample" : n_sample,
         "download_pars" : None,
-        ### Raw data:  column input #####################
-        "cols_input_type" : {
-            "colnum" : colnum,
-            "colcat" : colcat,
-            "coly" : coly
-        },
+
         ### family of columns for MODEL  ##################
          'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
 

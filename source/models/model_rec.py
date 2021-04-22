@@ -69,7 +69,7 @@ class Model(object):
         self.model_pars, self.compute_pars, self.data_pars, self.global_pars = model_pars, compute_pars, data_pars, global_pars
         if model_pars is None:
             self.model = None
-            return 
+            return
 
 
 
@@ -95,7 +95,7 @@ def get_dataset(data_pars, task_type="train"):
                                             get_data_idxs=False)
 
             return X_train
-        
+
     elif task_type == 'pred_decode':
         train_loader, X_train, target_errors_train, dataset_obj,  attributes = utils.load_data(data_path, batch_size,
                                         is_train=True,
@@ -111,7 +111,7 @@ def get_dataset(data_pars, task_type="train"):
                                             get_data_idxs=False)
 
             return train_loader, X_train, target_errors_train, dataset_obj, attributes
-        
+
         elif task_type == 'test':
 
             test_loader, X_test, target_errors_test, _, _ = utils.load_data(
@@ -125,7 +125,7 @@ def get_dataset(data_pars, task_type="train"):
                                             get_data_idxs=False)
 
             return train_loader
-        
+
     # -- clean versions for evaluation
     else:
 
@@ -142,7 +142,7 @@ def get_dataset(data_pars, task_type="train"):
             )
 
             return X_test_clean
-        
+
 
 def fit(data_pars=None, compute_pars=None, out_pars=None, **kw):
     """
@@ -162,7 +162,7 @@ def predict(Xpred=None, data_pars=None, compute_pars={}, out_pars={}, **kw):
     global model, session
     if Xpred is None:
         dataloader = get_dataset(data_pars, task_type='predict')
-        
+
         # One batch to predict on
         one_batch = next(iter(dataloader))
 
@@ -173,12 +173,12 @@ def predict(Xpred=None, data_pars=None, compute_pars={}, out_pars={}, **kw):
 
     return ypred
 
-    
+
 
 def eval(Xpred=None, data_pars: dict={}, compute_pars: dict={}, out_pars: dict={}, **kw):
     global model, session
     """
-         Encode + Decode 
+         Encode + Decode
     """
     Xencoded = encode(Xpred=Xpred, data_pars=data_pars, compute_pars=compute_pars, out_pars=out_pars)
     log("\nEncoded : ", Xencoded)
@@ -316,57 +316,130 @@ def test(n_sample          = 1000):
     def post_process_fun(y): return int(y)
     def pre_process_fun(y):  return int(y)
 
-    m = {'model_pars': {
-        'model_class':  "model_vaem.py::VAEMDN"
-        ,'model_pars' : {
-            'original_dim':       len( colcat + colnum),
-            'class_num':             2,
+    # m = {'model_pars': {
+    #     'model_class':  "model_vaem.py::VAEMDN"
+    #     ,'model_pars' : {
+    #         'original_dim':       len( colcat + colnum),
+    #         'class_num':             2,
 
+    #     }
+    #     , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
+    #     , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
+
+    #     ### Pipeline for data processing ##############################
+    #     'pipe_list': [  #### coly target prorcessing
+    #         {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
+    #         {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
+    #         {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
+    #     ],
+    #     }
+    #     },
+
+    # 'compute_pars': { 'metric_list': ['accuracy_score','average_precision_score'],
+    #                   'compute_pars' : {'epochs': 1 },
+    #                 },
+
+    # 'data_pars': { 'n_sample' : n_sample,
+    #     'download_pars' : None,
+    #     'cols_input_type' : {
+    #         'colcat' : colcat,
+    #         'colnum' : colnum,
+    #         'coly'  :  coly,
+    #     },
+    #     ### family of columns for MODEL  #########################################################
+    #     'cols_model_group': [ 'colnum_bin',   'colcat_bin',  ],
+
+    #     ### Added continuous & sparse features groups ###
+    #     'cols_model_type2': {
+    #         'colcontinuous':   colnum ,
+    #         'colsparse' : colcat,
+    #     }
+
+    #     ### Filter data rows   ##################################################################
+    #     ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 }
+
+
+    #     ###################################################
+    #     ,'train':   {'Xtrain': X_train,  'ytrain': y_train, 'Xtest':  X_valid,  'ytest':  y_valid}
+    #     ,'eval':    {'X': X_valid,  'y': y_valid}
+    #     ,'predict': {'X': X_valid}
+
+    #     ,'task_type' : 'train', 'data_type': 'ram'
+
+    #     }
+    # }
+    m = {
+    'model_pars': {
+        'model_class' :  "model_rec.py::TorchEASE"
+        ,'model_pars' : {
+            'cat': 10, 'n_estimators': 5
         }
         , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
         , 'pre_process_pars' : {'y_norm_fun' :  pre_process_fun ,  ### Before training  ##########################
-
-        ### Pipeline for data processing ##############################
-        'pipe_list': [  #### coly target prorcessing
+            ### Pipeline for data processing ##############################
+            'pipe_list': [  #### coly target prorcessing
             {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
             {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
             {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
-        ],
-        }
+
+            ],
+            }
+    },
+
+    'compute_pars': {
+        'compute_extra' :{
+
         },
 
-    'compute_pars': { 'metric_list': ['accuracy_score','average_precision_score'],
-                      'compute_pars' : {'epochs': 1 },
-                    },
-
-    'data_pars': { 'n_sample' : n_sample,
-        'download_pars' : None,
-        'cols_input_type' : {
-            'colcat' : colcat,
-            'colnum' : colnum,
-            'coly'  :  coly,
+        'compute_pars' :{
+            'metric_list': ['accuracy_score','average_precision_score'],
+            # Eval returns a probability
+            "probability" : True,
+            'epochs': 1,
         },
-        ### family of columns for MODEL  #########################################################
-        'cols_model_group': [ 'colnum_bin',   'colcat_bin',  ],
+
+    },
+
+    'data_pars': {
+        "n_sample" : n_sample,
+        "download_pars" : None,
+
+        ### family of columns for MODEL  ##################
+         'cols_model_group': [ 'colnum_bin',   'colcat_bin', ]
+
+        ### Filter data rows   ###########################
+        ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 },
 
         ### Added continuous & sparse features groups ###
         'cols_model_type2': {
-            'colcontinuous':   colnum ,
-            'colsparse' : colcat,
+        },
+
+        'data_pars' :{
+                'cols_model_type': {
+                },
+                # Raw dataset, pre preprocessing
+                "dataset_path" : "",
+                "batch_size":128,   ### Mini Batch from data
+                # Needed by getdataset
+                "clean" : False,
+                "data_path": "",
+
+                'colcat_unique' : None,
+                'colcat'        : colcat,
+                'colnum'        : colnum,
+                'coly'          : coly,
+                'colembed_dict' : None
         }
+        ####### ACTUAL data Values #############################################################
 
-        ### Filter data rows   ##################################################################
-        ,'filter_pars': { 'ymax' : 2 ,'ymin' : -1 }
-
-
-        ###################################################
         ,'train':   {'Xtrain': X_train,  'ytrain': y_train, 'Xtest':  X_valid,  'ytest':  y_valid}
-        ,'eval':    {'X': X_valid,  'y': y_valid}
+        ,'val':     {'X': X_valid,  'y': y_valid}
         ,'predict': {'X': X_valid}
 
-        ,'task_type' : 'train', 'data_type': 'ram'
+    },
 
-        }
+    'global_pars' :{
+    }
     }
 
     ###  Tester #########################################################
