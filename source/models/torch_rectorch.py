@@ -7,12 +7,10 @@ python torch_rectorch.py test
 
 """
 import os, sys,copy, pathlib, pprint, json, pandas as pd, numpy as np, scipy as sci, sklearn
-import wget, zipfile
 import scipy.sparse as scipy_sparse
 ####################################################################################################
-try   : verbosity = int(json.load(open(os.path.dirname(os.path.abspath(__file__)) + "/../../config.json", mode='r'))['verbosity'])
-except Exception as e : verbosity = 2
-#raise Exception(f"{e}")
+from utilmy import global_verbosity, os_makedirs
+verbosity = global_verbosity(__file__, "/../../config.json" ,default= 5)
 
 def log(*s):
     print(*s, flush=True)
@@ -23,9 +21,6 @@ def log2(*s):
 def log3(*s):
     if verbosity >= 3 : print(*s, flush=True)
 
-def os_makedirs(dir_or_file):
-    if os.path.isfile(dir_or_file) :os.makedirs(os.path.dirname(os.path.abspath(dir_or_file)), exist_ok=True)
-    else : os.makedirs(os.path.abspath(dir_or_file), exist_ok=True)
 
 ####################################################################################################
 global model, session
@@ -66,17 +61,17 @@ path_pkg =  thisfile_dirpath + "/repo/TorchEASE/"
 ####################################################################################################
 class Model(object):
     def __init__(self, model_pars=None, data_pars=None, compute_pars=None):
-        
+
         if model_pars is None:
             self.model = None
-            return 
+            return
 
         lam = model_pars.get("lam", 100.)
         self.model = EASE(
             lam=lam
         )
         log2(self.model)
-        
+
 
 def fit(data_pars=None, compute_pars=None, out_pars=None, **kw):
     """
@@ -178,11 +173,10 @@ def load_info(path=""):
 ####################################################################################################
 ############ Test  #################################################################################
 
-
 def make_rand_sparse_dataset(
         n_rows=1000,
     ):
-    # we need a single source of all user_ids and item_ids 
+    # we need a single source of all user_ids and item_ids
     # to avoid ids apearing in test that wasn't available in train
     all_train_data = np.random.randint(0, 10000000, (n_rows, 2)).astype(np.int32)
     val = np.ones((all_train_data.shape[0], 1)).astype(np.int32)
@@ -195,10 +189,9 @@ def make_rand_sparse_dataset(
     train_df, val_df = train_test_split(df, test_size=0.1, shuffle=True)
     val_df, test_df = train_test_split(val_df, test_size=0.5)
 
-    
-    
 
-    return train_df, val_df, test_df 
+    return train_df, val_df, test_df
+
 
 
 def test(n_sample          = 1000):
@@ -229,10 +222,13 @@ def test(n_sample          = 1000):
     #                   'compute_pars' : {'epochs': 1 },
     #                 },
 
-    # 'data_pars': { 
+
+    # 'data_pars': {
     #     'n_sample' : n_sample,
-        
-     
+
+
+
+
 
     #     ### Added continuous & sparse features groups ###
     #     'cols_model_type': {
@@ -256,7 +252,9 @@ def test(n_sample          = 1000):
     m = {
     'model_pars': {
         'model_class' :  "torch_rectorch.py::EASE"
-        ,'model_pars' : { 
+
+        ,'model_pars' : {
+
             'lam' : 100.
         }
         , 'post_process_fun' : post_process_fun   ### After prediction  ##########################################
@@ -266,6 +264,7 @@ def test(n_sample          = 1000):
             {'uri': 'source/prepro.py::pd_coly',                 'pars': {}, 'cols_family': 'coly',       'cols_out': 'coly',           'type': 'coly'         },
             {'uri': 'source/prepro.py::pd_colnum_bin',           'pars': {}, 'cols_family': 'colnum',     'cols_out': 'colnum_bin',     'type': ''             },
             {'uri': 'source/prepro.py::pd_colcat_bin',           'pars': {}, 'cols_family': 'colcat',     'cols_out': 'colcat_bin',     'type': ''             },
+
 
             ],
             }
@@ -296,6 +295,7 @@ def test(n_sample          = 1000):
         ### Added continuous & sparse features groups ###
         'cols_model_type2': {
         },
+
 
         'data_pars' :{
                 'cols_model_type': {
@@ -379,8 +379,61 @@ def test_helper(model_pars, data_pars, compute_pars):
 #     return X,y, X_train, X_valid, y_train, y_valid, X_test,  y_test, num_classes
 
 
+
 if __name__ == "__main__":
     import fire
     fire.Fire()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def test_dataset_goodbooks(nrows=1000):
+#     from sklearn.preprocessing import LabelEncoder
+#     data_path = "./goodbooks_dataset"
+#     if not os.path.isdir(data_path):
+#         os.makedirs(data_path, exist_ok=True)
+
+#         wget.download(
+#             "https://github.com/zygmuntz/goodbooks-10k/releases/download/v1.0/goodbooks-10k.zip",
+#             out=data_path
+#         )
+
+#         with zipfile.ZipFile(f"{data_path}/goodbooks-10k.zip") as zip_ref:
+#             zip_ref.extractall(data_path)
+#     df = pd.read_csv(data_path + "/ratings.csv")
+#     # Dense features
+#     coly = ['rating',  ]
+
+#     # Sparse features
+#     colcat = ['user_id', 'book_id' ]
+#     colnum = []
+#     return df, colnum, colcat, coly
+
+
+# def train_test_split2(df, coly):
+#     log3(df.dtypes)
+#     y = df[coly] ### If clonassificati
+#     X = df.drop(coly,  axis=1)
+#     log3('y', np.sum(y[y==1]) , X.head(3))
+#     ######### Split the df into train/test subsets
+#     X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.05, random_state=2021)
+#     X_train, X_valid, y_train, y_valid         = train_test_split(X_train_full, y_train_full, random_state=2021)
+
+#     #####
+#     # y = y.astype('uint8')
+#     num_classes                                = len(set(y_train_full.values.ravel()))
+
+#     return X,y, X_train, X_valid, y_train, y_valid, X_test,  y_test, num_classes
 

@@ -33,8 +33,11 @@ Args:
 import os, sys,copy, pathlib, pprint, json, pandas as pd, numpy as np, scipy as sci, sklearn
 
 ####################################################################################################
-try   : verbosity = int(json.load(open(os.path.dirname(os.path.abspath(__file__)) + "/../../config.json", mode='r'))['verbosity'])
-except Exception as e : verbosity = 4
+from utilmy import global_verbosity, os_makedirs
+
+verbosity = global_verbosity(__file__, "/../../config.json", default=3)
+#try   : verbosity = int(json.load(open(os.path.dirname(os.path.abspath(__file__)) + "/../../config.json", mode='r'))['verbosity'])
+#except Exception as e : verbosity = 4
 #raise Exception(f"{e}")
 
 def log(*s):
@@ -46,9 +49,6 @@ def log2(*s):
 def log3(*s):
     if verbosity >= 3 : print(*s, flush=True)
 
-def os_makedirs(dir_or_file):
-    if os.path.isfile(dir_or_file) :os.makedirs(os.path.dirname(os.path.abspath(dir_or_file)), exist_ok=True)
-    else : os.makedirs(os.path.abspath(dir_or_file), exist_ok=True)
 
 ####################################################################################################
 global model, session
@@ -307,6 +307,7 @@ def get_dataset(data_pars=None, task_type="train", **kw):
 
 ####################################################################################################
 ############ Test  #################################################################################
+<<<<<<< HEAD
 def test_dataset_covtype(nrows=1000):
     # Dense features
     colnum = ["Elevation", "Aspect", "Slope", "Horizontal_Distance_To_Hydrology", "Vertical_Distance_To_Hydrology", "Horizontal_Distance_To_Roadways", "Hillshade_9am" , "Hillshade_Noon",  "Hillshade_3pm", "Horizontal_Distance_To_Fire_Points"]
@@ -334,6 +335,8 @@ def test_dataset_covtype(nrows=1000):
     return df, colnum, colcat, coly
 
 
+=======
+>>>>>>> a34b1e3da447d9458c3ce0546607773f0367a73b
 def train_test_split2(df, coly):
     log3(df.dtypes)
     X,y = df.drop(coly,  axis=1), df[coly]
@@ -344,13 +347,18 @@ def train_test_split2(df, coly):
     return X,y, X_train, X_valid, y_train, y_valid, X_test,  y_test, num_classes
 
 
+
 def test(n_sample = 100):
     """
         nrows : take first nrows from dataset
     """
     global model, session
-    df, colnum, colcat, coly = test_dataset_covtype()
+
+    from adatasets import test_dataset_classifier_covtype
+    df, p                = test_dataset_classifier_covtype(nrows=n_sample)
+    colnum, colcat, coly = p['colnum'], p['colcat'],p['coly']
     X,y, X_train, X_valid, y_train, y_valid, X_test,  y_test, num_classes = train_test_split2(df, coly)
+    # df, colnum, colcat, coly = test_dataset_covtype()
 
     #### Matching Big dict  ##################################################
     cols_input_type_1 = []
@@ -605,7 +613,9 @@ def test3(n_sample = 100):
         nrows : take first nrows from dataset
     """
     global model, session
-    df, colnum, colcat, coly = test_dataset_covtype()
+    from adatasets import test_dataset_classifier_covtype
+    df, p                = test_dataset_classifier_covtype(nrows=n_sample)
+    colnum, colcat, coly = p['colnum'], p['colcat'],p['coly']
     X,y, X_train, X_valid, y_train, y_valid, X_test,  y_test, num_classes = train_test_split2(df, coly)
 
     #### Matching Big dict  ##################################################
@@ -839,13 +849,11 @@ if __name__ == "__main__":
 
 
 
-
+"""
 
 def get_dataset2(data_pars=None, task_type="train", **kw):
-    """
-      "ram"  :
-      "file" :
-    """
+    #  "ram"  :
+    #  "file" :
     # log(data_pars)
     data_type = data_pars.get('type', 'ram')
     if data_type == "ram":
@@ -866,3 +874,4 @@ def get_dataset2(data_pars=None, task_type="train", **kw):
 
     raise Exception(f' Requires  Xtrain", "Xtest", "ytrain", "ytest" ')
 
+"""
