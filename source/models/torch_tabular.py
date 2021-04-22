@@ -307,7 +307,6 @@ def get_dataset(data_pars=None, task_type="train", **kw):
 
 ####################################################################################################
 ############ Test  #################################################################################
-<<<<<<< HEAD
 def test_dataset_covtype(nrows=1000):
     # Dense features
     colnum = ["Elevation", "Aspect", "Slope", "Horizontal_Distance_To_Hydrology", "Vertical_Distance_To_Hydrology", "Horizontal_Distance_To_Roadways", "Hillshade_9am" , "Hillshade_Noon",  "Hillshade_3pm", "Horizontal_Distance_To_Fire_Points"]
@@ -335,8 +334,6 @@ def test_dataset_covtype(nrows=1000):
     return df, colnum, colcat, coly
 
 
-=======
->>>>>>> a34b1e3da447d9458c3ce0546607773f0367a73b
 def train_test_split2(df, coly):
     log3(df.dtypes)
     X,y = df.drop(coly,  axis=1), df[coly]
